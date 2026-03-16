@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目总览 - 剧本拆解</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    background: #f8fafc;
+    color: #1e293b;
+    min-height: 100vh;
+  }
+
+  /* ── Header ──────────────────────────────────── */
+  .ov-header {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .ov-back {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background .15s;
+  }
+  .ov-back:hover { background: #eff6ff; }
+  .ov-project-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .ov-stats {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .ov-stat {
+    font-size: 12px;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+  .ov-stat b { color: #2563eb; }
+
+  /* ── Tabs ──────────────────────────────────── */
+  .ov-tabs {
+    background: #fff;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    padding: 0 24px;
+    gap: 0;
+  }
+  .ov-tab-btn {
+    padding: 12px 20px;
+    border: none;
+    background: none;
+    font-size: 14px;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color .15s, border-color .15s;
+    font-weight: 500;
+  }
+  .ov-tab-btn:hover { color: #2563eb; }
+  .ov-tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+
+  /* ── Search ──────────────────────────────────── */
+  .ov-search-bar {
+    padding: 16px 24px 0;
+  }
+  .ov-search-input {
+    width: 320px;
+    max-width: 100%;
+    padding: 7px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    background: #fff;
+    transition: border-color .15s;
+  }
+  .ov-search-input:focus { border-color: #2563eb; }
+  .ov-search-hint { font-size: 12px; color: #94a3b8; margin-left: 8px; }
+
+  /* ── Content ──────────────────────────────────── */
+  .ov-content {
+    padding: 16px 24px 40px;
+  }
+  .ov-tab-panel { display: none; }
+  .ov-tab-panel.active { display: block; }
+
+  /* ── Empty/Loading ──────────────────────────────────── */
+  .ov-empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 60px 20px;
+    font-size: 15px;
+  }
+  .ov-loading {
+    text-align: center;
+    color: #2563eb;
+    padding: 60px 20px;
+    font-size: 15px;
+  }
+
+  /* ── Entity card ──────────────────────────────────── */
+  .ov-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: box-shadow .15s;
+  }
+  .ov-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+
+  .ov-card-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    gap: 10px;
+    user-select: none;
+  }
+  .ov-card-header:hover { background: #f8fafc; }
+  .ov-toggle {
+    font-size: 11px;
+    color: #94a3b8;
+    transition: transform .2s;
+    flex-shrink: 0;
+  }
+  .ov-card.expanded .ov-toggle { transform: rotate(90deg); }
+  .ov-card-name {
+    font-weight: 600;
+    color: #0f172a;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ov-card-meta {
+    font-size: 12px;
+    color: #64748b;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .ov-rename-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color .15s, color .15s;
+  }
+  .ov-rename-btn:hover { border-color: #2563eb; color: #2563eb; }
+
+  /* ── Card body ──────────────────────────────────── */
+  .ov-card-body {
+    display: none;
+    border-top: 1px solid #f1f5f9;
+  }
+  .ov-card.expanded .ov-card-body { display: block; }
+
+  .ov-ep-section {
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .ov-ep-section:last-child { border-bottom: none; }
+  .ov-ep-label {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2563eb;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .ov-scene-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 16px 5px 24px;
+    border-bottom: 1px solid #f8fafc;
+    font-size: 13px;
+    transition: background .1s;
+  }
+  .ov-scene-row:last-child { border-bottom: none; }
+  .ov-scene-row:hover { background: #f8fafc; }
+  .ov-scene-num {
+    font-weight: 700;
+    color: #2563eb;
+    flex-shrink: 0;
+    min-width: 42px;
+    font-size: 12px;
+  }
+  .ov-scene-heading {
+    flex: 1;
+    min-width: 0;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ov-scene-loc {
+    font-size: 11px;
+    color: #94a3b8;
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ov-scene-entities {
+    font-size: 11px;
+    color: #64748b;
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Episodes table ──────────────────────────────────── */
+  .ov-ep-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+  }
+  .ov-ep-table th {
+    padding: 8px 12px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .ov-ep-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+  }
+  .ov-ep-table tr:nth-child(even) td { background: #f8fafc; }
+  .ov-ep-table tr:last-child td { border-bottom: none; }
+  .ov-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    padding: 16px 0 8px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ov-section-count {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 400;
+  }
+</style>
+</head>
+<body>
+
+<div class="ov-header">
+  <a class="ov-back" href="/">剧本拆解</a>
+  <span class="ov-nav-sep" style="color:#e2e8f0;margin:0 4px">|</span>
+  <a class="ov-back" href="/overview" style="font-weight:600;color:#0f172a;background:#eff6ff">跨集总览</a>
+  <a class="ov-back" href="/schedule">排期管理</a>
+  <a class="ov-back" href="/callsheet">通告中心</a>
+  <span class="ov-project-name" id="ov-project-name" style="margin-left:16px">加载中...</span>
+  <div class="ov-stats" id="ov-stats"></div>
+</div>
+
+<div class="ov-tabs">
+  <button class="ov-tab-btn active" data-tab="characters">人物</button>
+  <button class="ov-tab-btn" data-tab="locations">地点统筹</button>
+  <button class="ov-tab-btn" data-tab="props">道具</button>
+  <button class="ov-tab-btn" data-tab="episodes">集数一览</button>
+</div>
+
+<div class="ov-search-bar">
+  <input class="ov-search-input" id="ov-search" type="text" placeholder="搜索...">
+  <span class="ov-search-hint">快速过滤当前选项卡内容</span>
+</div>
+
+<div class="ov-content">
+
+  <!-- Characters tab -->
+  <div class="ov-tab-panel active" id="tab-characters">
+    <div class="ov-loading" id="chars-loading">加载中...</div>
+    <div id="chars-list"></div>
+  </div>
+
+  <!-- Locations tab -->
+  <div class="ov-tab-panel" id="tab-locations">
+    <div class="ov-loading" id="locs-loading">加载中...</div>
+    <div id="locs-list"></div>
+  </div>
+
+  <!-- Props tab -->
+  <div class="ov-tab-panel" id="tab-props">
+    <div class="ov-loading" id="props-loading">加载中...</div>
+    <div id="props-list"></div>
+  </div>
+
+  <!-- Episodes tab -->
+  <div class="ov-tab-panel" id="tab-episodes">
+    <div class="ov-loading" id="ep-loading">加载中...</div>
+    <div id="ep-list"></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+let _data = null;
+let _currentTab = 'characters';
+
+// ── Escape HTML ──────────────────────────────────────────────────
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str || '');
+  return d.innerHTML;
+}
+
+// ── Load data ─────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const resp = await fetch('/api/overview/full');
+    if (!resp.ok) {
+      const err = await resp.json();
+      showError(err.error || '加载失败');
+      return;
+    }
+    _data = await resp.json();
+    renderAll();
+  } catch (e) {
+    showError('网络错误: ' + e.message);
+  }
+}
+
+function showError(msg) {
+  ['chars-loading','locs-loading','props-loading','ep-loading'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = msg; el.style.color = '#ef4444'; }
+  });
+  document.getElementById('ov-project-name').textContent = '加载失败';
+}
+
+// ── Render all ────────────────────────────────────────────────────
+function renderAll() {
+  if (!_data) return;
+
+  // Header
+  document.title = `${_data.project_name} - 总览 - 剧本拆解`;
+  document.getElementById('ov-project-name').textContent = _data.project_name;
+  document.getElementById('ov-stats').innerHTML = [
+    `<span class="ov-stat">共 <b>${_data.episodes.length}</b> 集</span>`,
+    `<span class="ov-stat">共 <b>${_data.total_scenes}</b> 场</span>`,
+    `<span class="ov-stat"><b>${_data.characters.length}</b> 个人物</span>`,
+    `<span class="ov-stat"><b>${_data.locations.length}</b> 处地点</span>`,
+    `<span class="ov-stat"><b>${_data.props.length}</b> 件道具</span>`,
+  ].join('');
+
+  renderCharacters(_data.characters);
+  renderLocations(_data.locations);
+  renderProps(_data.props);
+  renderEpisodes(_data.episodes);
+}
+
+// ── Card builder ──────────────────────────────────────────────────
+function buildCard(item, opts) {
+  const { showLoc, showEntities, showRename } = opts || {};
+
+  const card = document.createElement('div');
+  card.className = 'ov-card';
+  card.dataset.name = item.name.toLowerCase();
+
+  const epCount = item.episodes.length;
+  const header = document.createElement('div');
+  header.className = 'ov-card-header';
+  header.innerHTML = `
+    <span class="ov-toggle">▶</span>
+    <span class="ov-card-name">${esc(item.name)}</span>
+    ${showRename ? `<button class="ov-rename-btn" data-name="${esc(item.name)}">改名/合并</button>` : ''}
+    <span class="ov-card-meta">共 ${item.total_scenes} 场 · ${epCount} 集</span>
+  `;
+  header.addEventListener('click', (e) => {
+    if (e.target.classList.contains('ov-rename-btn')) return;
+    card.classList.toggle('expanded');
+  });
+
+  if (showRename) {
+    header.querySelectorAll('.ov-rename-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const oldName = btn.dataset.name;
+        const newName = prompt(`将地点「${oldName}」重命名为（输入已有地点名可合并）:\n注意：仅修改当前活跃集数中的地点`, oldName);
+        if (newName !== null && newName.trim() && newName.trim() !== oldName) {
+          await renameLocation(oldName, newName.trim());
+        }
+      });
+    });
+  }
+
+  const body = document.createElement('div');
+  body.className = 'ov-card-body';
+
+  item.episodes.forEach(ep => {
+    const epSec = document.createElement('div');
+    epSec.className = 'ov-ep-section';
+    epSec.innerHTML = `<div class="ov-ep-label">📁 ${esc(ep.episode_name)} · ${ep.scenes.length} 场</div>`;
+
+    ep.scenes.forEach(sc => {
+      const row = document.createElement('div');
+      row.className = 'ov-scene-row';
+      let extraHtml = '';
+      if (showLoc && sc.location) {
+        extraHtml = `<span class="ov-scene-loc" title="${esc(sc.location)}">${esc(sc.location)}</span>`;
+      }
+      if (showEntities) {
+        const chars = (sc.characters || []).join('、');
+        const props = (sc.props || []).join('、');
+        const parts = [chars && `人: ${chars}`, props && `具: ${props}`].filter(Boolean).join('  ');
+        if (parts) extraHtml += `<span class="ov-scene-entities" title="${esc(parts)}">${esc(parts)}</span>`;
+      }
+      const timeTag = [sc.int_ext, sc.time_of_day].filter(Boolean).join(' ');
+      row.innerHTML = `
+        <span class="ov-scene-num">场 ${esc(sc.scene_number)}</span>
+        <span class="ov-scene-heading" title="${esc(sc.heading)}">${esc(sc.heading) || esc(sc.location) || '(无标题)'}</span>
+        ${timeTag ? `<span class="ov-scene-loc">${esc(timeTag)}</span>` : ''}
+        ${extraHtml}
+      `;
+      epSec.appendChild(row);
+    });
+
+    body.appendChild(epSec);
+  });
+
+  card.appendChild(header);
+  card.appendChild(body);
+  return card;
+}
+
+// ── Render characters ─────────────────────────────────────────────
+function renderCharacters(list) {
+  document.getElementById('chars-loading').style.display = 'none';
+  const container = document.getElementById('chars-list');
+  container.innerHTML = '';
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div class="ov-empty">暂无人物数据，请先在主界面执行实体提取</div>';
+    return;
+  }
+  list.forEach(item => {
+    container.appendChild(buildCard(item, { showLoc: true }));
+  });
+}
+
+// ── Render locations ──────────────────────────────────────────────
+function renderLocations(list) {
+  document.getElementById('locs-loading').style.display = 'none';
+  const container = document.getElementById('locs-list');
+  container.innerHTML = '';
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div class="ov-empty">暂无地点数据</div>';
+    return;
+  }
+  list.forEach(item => {
+    container.appendChild(buildCard(item, { showEntities: true, showRename: true }));
+  });
+}
+
+// ── Render props ──────────────────────────────────────────────────
+function renderProps(list) {
+  document.getElementById('props-loading').style.display = 'none';
+  const container = document.getElementById('props-list');
+  container.innerHTML = '';
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div class="ov-empty">暂无道具数据，请先在主界面执行实体提取</div>';
+    return;
+  }
+  list.forEach(item => {
+    container.appendChild(buildCard(item, { showLoc: true }));
+  });
+}
+
+// ── Render episodes table ─────────────────────────────────────────
+function renderEpisodes(eps) {
+  document.getElementById('ep-loading').style.display = 'none';
+  const container = document.getElementById('ep-list');
+  if (!eps || eps.length === 0) {
+    container.innerHTML = '<div class="ov-empty">暂无集数</div>';
+    return;
+  }
+
+  // Build full per-episode stats from _data
+  const epStats = {};
+  (_data.characters || []).forEach(ch => {
+    ch.episodes.forEach(ep => {
+      const s = epStats[ep.episode_name] = epStats[ep.episode_name] || {chars: new Set(), props: new Set(), locs: new Set()};
+      s.chars.add(ch.name);
+    });
+  });
+  (_data.props || []).forEach(pr => {
+    pr.episodes.forEach(ep => {
+      const s = epStats[ep.episode_name] = epStats[ep.episode_name] || {chars: new Set(), props: new Set(), locs: new Set()};
+      s.props.add(pr.name);
+    });
+  });
+  (_data.locations || []).forEach(loc => {
+    loc.episodes.forEach(ep => {
+      const s = epStats[ep.episode_name] = epStats[ep.episode_name] || {chars: new Set(), props: new Set(), locs: new Set()};
+      s.locs.add(loc.name);
+    });
+  });
+
+  let html = `<table class="ov-ep-table">
+    <tr>
+      <th>集数</th>
+      <th>场次数</th>
+      <th>人物数</th>
+      <th>地点数</th>
+      <th>道具数</th>
+    </tr>`;
+
+  let totalScenes = 0, totalChars = new Set(), totalProps = new Set(), totalLocs = new Set();
+  eps.forEach((ep, i) => {
+    const st = epStats[ep.name] || {chars: new Set(), props: new Set(), locs: new Set()};
+    totalScenes += ep.scene_count;
+    st.chars.forEach(c => totalChars.add(c));
+    st.props.forEach(p => totalProps.add(p));
+    st.locs.forEach(l => totalLocs.add(l));
+    html += `<tr>
+      <td><b>${esc(i + 1)}. ${esc(ep.name)}</b></td>
+      <td>${ep.scene_count}</td>
+      <td>${st.chars.size}</td>
+      <td>${st.locs.size}</td>
+      <td>${st.props.size}</td>
+    </tr>`;
+  });
+  html += `<tr style="font-weight:700;background:#eff6ff">
+    <td>合计</td>
+    <td>${totalScenes}</td>
+    <td>${totalChars.size}</td>
+    <td>${totalLocs.size}</td>
+    <td>${totalProps.size}</td>
+  </tr>`;
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+// ── Location rename ───────────────────────────────────────────────
+async function renameLocation(oldName, newName) {
+  try {
+    const resp = await fetch('/api/scenes/location/rename', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({old_name: oldName, new_name: newName}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      alert(data.error || '重命名失败');
+      return;
+    }
+    alert(`已将地点「${oldName}」重命名为「${newName}」。\n刷新页面可看到更新后的数据。`);
+    // Reload overview data
+    await loadData();
+  } catch (e) {
+    alert('网络错误: ' + e.message);
+  }
+}
+
+// ── Search/filter ─────────────────────────────────────────────────
+document.getElementById('ov-search').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  const panel = document.querySelector('.ov-tab-panel.active');
+  if (!panel) return;
+  panel.querySelectorAll('.ov-card').forEach(card => {
+    const match = !q || card.dataset.name.includes(q);
+    card.style.display = match ? '' : 'none';
+  });
+});
+
+// ── Tabs ─────────────────────────────────────────────────────────
+document.querySelectorAll('.ov-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ov-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _currentTab = btn.dataset.tab;
+
+    document.querySelectorAll('.ov-tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('tab-' + _currentTab);
+    if (panel) panel.classList.add('active');
+
+    // Reset search
+    document.getElementById('ov-search').value = '';
+    if (panel) panel.querySelectorAll('.ov-card').forEach(c => c.style.display = '');
+  });
+});
+
+// ── Boot ─────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

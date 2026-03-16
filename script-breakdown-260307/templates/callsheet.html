@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通告中心 - 剧本拆解</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+html, body { overflow: hidden; }
+
+/* ── Navigation Bar ──────────────────────────────────── */
+#cs-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  height: 42px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.cs-nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-right: 16px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.cs-nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  height: 42px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.cs-nav-link:hover { color: var(--accent); }
+.cs-nav-link.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.cs-nav-link.disabled { opacity: .4; pointer-events: none; }
+
+/* ── Toolbar ─────────────────────────────────────────── */
+#cs-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--border);
+  height: 40px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+#cs-toolbar button {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+  transition: background .15s, border-color .15s;
+}
+#cs-toolbar button:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+#cs-toolbar button:disabled { opacity: .4; cursor: not-allowed; }
+#cs-toolbar .separator { width: 1px; height: 22px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+#cs-toolbar-status {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#cs-toolbar-status.is-error { color: var(--danger); }
+
+/* ── Main 2-column layout ────────────────────────────── */
+#cs-main {
+  display: flex;
+  height: calc(100vh - 42px - 40px - 28px);
+  overflow: hidden;
+}
+
+/* ── Left panel — day list ───────────────────────────── */
+#cs-left {
+  width: 240px;
+  min-width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+.cs-ph {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  flex-shrink: 0;
+}
+.cs-ph-count { font-weight: normal; text-transform: none; letter-spacing: 0; font-size: 11px; }
+
+#cs-day-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 3px 0;
+}
+.cs-day-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+  line-height: 1.4;
+  transition: background .1s;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  position: relative;
+}
+.cs-day-item:hover { background: var(--line-hover); }
+.cs-day-item.selected { background: #e8f0fe; }
+.cs-day-num {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 10px;
+  padding: 1px 6px;
+  line-height: 1.6;
+  margin-top: 1px;
+}
+.cs-day-info { flex: 1; min-width: 0; }
+.cs-day-date {
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-day-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-day-saved {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #16a34a;
+  font-weight: 600;
+  align-self: center;
+}
+.cs-left-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 24px 12px;
+}
+
+/* ── Resize handle ───────────────────────────────────── */
+.cs-resize {
+  width: 4px;
+  cursor: col-resize;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.cs-resize:hover, .cs-resize.active { background: var(--accent); }
+
+/* ── Right panel — editor ────────────────────────────── */
+#cs-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f4f6f9;
+  overflow: hidden;
+}
+#cs-editor-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 40px;
+}
+.cs-editor-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 14px;
+  gap: 8px;
+  padding: 40px;
+  text-align: center;
+}
+.cs-editor-empty button {
+  margin-top: 8px;
+  padding: 7px 20px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.cs-editor-empty button:hover { opacity: .88; }
+
+/* ── Editor card ─────────────────────────────────────── */
+.cs-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.cs-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.cs-card-body { padding: 12px 14px; }
+
+/* ── Form grid ───────────────────────────────────────── */
+.cs-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.cs-form-grid.cols2 { grid-template-columns: 1fr 1fr; }
+.cs-form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+.cs-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cs-form-group.full { grid-column: 1 / -1; }
+.cs-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+.cs-input {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  font-family: inherit;
+  color: var(--text);
+  transition: border-color .15s;
+}
+.cs-input:focus { border-color: var(--accent); }
+.cs-input[readonly] { background: #f8fafc; color: var(--text-secondary); }
+.cs-textarea {
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.5;
+}
+
+/* ── Tables ──────────────────────────────────────────── */
+.cs-table-wrap { overflow-x: auto; }
+.cs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cs-table th {
+  text-align: left;
+  padding: 5px 8px;
+  background: var(--header-bg);
+  border-bottom: 2px solid var(--border);
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cs-table td {
+  padding: 4px 4px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.cs-table tr:last-child td { border-bottom: none; }
+.cs-table tr:hover td { background: #fafbff; }
+.cs-td-input {
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  color: var(--text);
+  transition: border-color .15s, background .15s;
+}
+.cs-td-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+}
+.cs-td-select {
+  padding: 3px 4px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 12px;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+.cs-td-select:focus { border-color: var(--accent); background: #fff; }
+.cs-td-time { width: 72px; text-align: center; }
+.cs-td-num  { width: 48px; text-align: center; }
+.cs-td-status { width: 48px; text-align: center; }
+.cs-row-del {
+  padding: 2px 6px;
+  border: 1px solid #fca5a5;
+  border-radius: 3px;
+  background: #fff5f5;
+  color: #ef4444;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+}
+.cs-row-del:hover { background: #fee2e2; }
+.cs-add-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border: 1px dashed #94a3b8;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.cs-add-row:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Props section ───────────────────────────────────── */
+#cs-props-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 28px;
+  padding: 4px 0;
+}
+.cs-prop-chip {
+  padding: 2px 10px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #fde68a;
+}
+.cs-props-none { font-size: 12px; color: var(--text-secondary); }
+
+/* ── Save bar ────────────────────────────────────────── */
+#cs-save-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#btn-save-cs {
+  padding: 5px 18px;
+  border: none;
+  border-radius: 5px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+#btn-save-cs:hover { opacity: .88; }
+#btn-save-cs:disabled { opacity: .4; cursor: not-allowed; }
+#cs-save-hint { font-size: 12px; color: var(--text-secondary); }
+
+/* ── Status bar ──────────────────────────────────────── */
+#cs-statusbar {
+  height: 28px;
+  background: var(--header-bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  gap: 8px;
+  flex-shrink: 0;
+}
+#cs-statusbar-text.is-error { color: var(--danger); }
+
+/* ── LLM Dialog Modal ────────────────────────────────── */
+.cs-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  animation: cs-fade-in .15s ease;
+}
+.cs-modal-backdrop.hidden { display: none; }
+@keyframes cs-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.cs-modal {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  width: 560px;
+  max-width: 92vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  animation: cs-slide-up .2s ease;
+  overflow: hidden;
+}
+@keyframes cs-slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.cs-modal-header {
+  background: linear-gradient(135deg, #1a56db, #2563eb);
+  padding: 14px 18px 12px;
+  color: #fff;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.cs-modal-header-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.cs-modal-header-text { flex: 1; min-width: 0; }
+.cs-modal-title { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.cs-modal-subtitle { font-size: 11px; opacity: .8; margin-top: 3px; }
+.cs-modal-close {
+  flex-shrink: 0;
+  background: rgba(255,255,255,.15);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  padding: 3px 7px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.cs-modal-close:hover { background: rgba(255,255,255,.3); }
+.cs-modal-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  gap: 14px;
+}
+.cs-modal-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: cs-spin .8s linear infinite;
+}
+@keyframes cs-spin { to { transform: rotate(360deg); } }
+.cs-modal-loading-text { font-size: 13px; color: var(--text-secondary); }
+.cs-modal-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  gap: 12px;
+  text-align: center;
+}
+.cs-modal-error-icon { font-size: 32px; }
+.cs-modal-error-msg { font-size: 13px; color: var(--text-secondary); max-width: 360px; }
+.cs-modal-error-retry {
+  padding: 6px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.cs-modal-error-retry:hover { background: var(--accent); color: #fff; }
+.cs-modal-hint-bar {
+  padding: 7px 14px;
+  background: #eff6ff;
+  border-bottom: 1px solid #bfdbfe;
+  font-size: 11px;
+  color: #1d4ed8;
+  flex-shrink: 0;
+}
+.cs-modal-body { flex: 1; overflow-y: auto; padding: 4px 0; }
+.cs-llm-section { border-bottom: 1px solid #f0f0f0; }
+.cs-llm-section:last-child { border-bottom: none; }
+.cs-llm-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .1s;
+}
+.cs-llm-section-header:hover { background: #f8faff; }
+.cs-llm-section-check { flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
+.cs-llm-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  letter-spacing: .3px;
+}
+.cs-llm-section-title { flex: 1; font-size: 12px; color: var(--text-secondary); }
+.cs-llm-toggle { font-size: 10px; color: #94a3b8; }
+.cs-llm-section-body {
+  padding: 2px 14px 10px 37px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.cs-modal-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--header-bg);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.cs-modal-select-bar label { cursor: pointer; user-select: none; }
+.cs-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cs-modal-btn {
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+.cs-modal-btn-ghost {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-secondary);
+}
+.cs-modal-btn-ghost:hover { border-color: #94a3b8; color: var(--text); }
+.cs-modal-btn-secondary {
+  border: 1px solid var(--accent);
+  background: #fff;
+  color: var(--accent);
+}
+.cs-modal-btn-secondary:hover { background: #eff6ff; }
+.cs-modal-btn-primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.cs-modal-btn-primary:hover { opacity: .88; }
+</style>
+</head>
+<body>
+
+<!-- Navigation bar -->
+<nav id="cs-nav">
+  <a class="cs-nav-brand" href="/">剧本拆解</a>
+  <a class="cs-nav-link" href="/">剧本拆解</a>
+  <a class="cs-nav-link" href="/overview">跨集总览</a>
+  <a class="cs-nav-link" href="/schedule">排期管理</a>
+  <a class="cs-nav-link active" href="/callsheet">通告中心</a>
+</nav>
+
+<!-- Toolbar -->
+<div id="cs-toolbar">
+  <button id="btn-generate-cs" title="从排期数据自动生成当日通告单" disabled>从排期生成</button>
+  <button id="btn-llm-notes" title="AI 分析场次内容，补充拍摄注意事项" disabled>AI 补充细节</button>
+  <span class="separator"></span>
+  <button id="btn-export-xlsx" title="导出 Excel 格式通告单" disabled>导出 XLSX</button>
+  <button id="btn-export-pdf" title="在浏览器中打开可打印页面（支持打印/另存 PDF）" disabled>导出 PDF</button>
+  <div id="cs-toolbar-status">
+    <span id="cs-toolbar-status-text"></span>
+    <span id="cs-toolbar-spinner" class="spinner" style="display:none"></span>
+  </div>
+</div>
+
+<!-- 2-column main -->
+<div id="cs-main">
+
+  <!-- LEFT: shooting day list -->
+  <div id="cs-left">
+    <div class="cs-ph">
+      <span>拍摄日</span>
+      <span class="cs-ph-count" id="cs-day-count"></span>
+    </div>
+    <div id="cs-day-list">
+      <div class="cs-left-empty" id="cs-left-empty">暂无排期数据</div>
+    </div>
+  </div>
+
+  <div class="cs-resize" id="cs-resize"></div>
+
+  <!-- RIGHT: callsheet editor -->
+  <div id="cs-right">
+    <div id="cs-editor-wrap">
+
+      <!-- Empty state -->
+      <div class="cs-editor-empty" id="cs-editor-empty">
+        <div>← 选择左侧拍摄日<br><span style="font-size:12px;color:#94a3b8">或先在排期管理中生成排期</span></div>
+      </div>
+
+      <!-- Editor content (hidden until a day is selected) -->
+      <div id="cs-editor-content" style="display:none">
+
+        <!-- Header info -->
+        <div class="cs-card">
+          <div class="cs-card-title">
+            <span>通告单头部</span>
+            <span id="cs-day-label" style="font-weight:normal;text-transform:none;letter-spacing:0;font-size:12px;color:var(--text)"></span>
+          </div>
+          <div class="cs-card-body">
+            <div class="cs-form-grid cols2">
+              <div class="cs-form-group">
+                <label class="cs-label">项目名称</label>
+                <input class="cs-input" id="cs-project-name" type="text" placeholder="项目名称">
+              </div>
+              <div class="cs-form-group">
+                <label class="cs-label">日期</label>
+                <input class="cs-input" id="cs-date-field" type="text" readonly>
+              </div>
+              <div class="cs-form-group">
+                <label class="cs-label">导演</label>
+                <input class="cs-input" id="cs-director" type="text" placeholder="导演姓名">
+              </div>
+              <div class="cs-form-group">
+                <label class="cs-label">制片</label>
+                <input class="cs-input" id="cs-producer" type="text" placeholder="制片姓名">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call info -->
+        <div class="cs-card">
+          <div class="cs-card-title">集合信息</div>
+          <div class="cs-card-body">
+            <div class="cs-form-grid cols3">
+              <div class="cs-form-group">
+                <label class="cs-label">全体集合时间</label>
+                <input class="cs-input" id="cs-crew-call" type="text" placeholder="07:00">
+              </div>
+              <div class="cs-form-group">
+                <label class="cs-label">主要拍摄地点</label>
+                <input class="cs-input" id="cs-location" type="text" placeholder="场地名称">
+              </div>
+              <div class="cs-form-group">
+                <label class="cs-label">详细地址</label>
+                <input class="cs-input" id="cs-location-address" type="text" placeholder="具体地址">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenes table -->
+        <div class="cs-card">
+          <div class="cs-card-title">场次表</div>
+          <div class="cs-card-body" style="padding-bottom:8px">
+            <div class="cs-table-wrap">
+              <table class="cs-table">
+                <thead>
+                  <tr>
+                    <th style="width:50px">场次号</th>
+                    <th>场景标题</th>
+                    <th style="width:70px">内外景</th>
+                    <th style="width:70px">时间段</th>
+                    <th>人物</th>
+                    <th style="width:50px">页数</th>
+                    <th>备注</th>
+                    <th style="width:30px"></th>
+                  </tr>
+                </thead>
+                <tbody id="cs-scenes-tbody"></tbody>
+              </table>
+            </div>
+            <button class="cs-add-row" id="btn-add-scene-row">+ 添加场次</button>
+          </div>
+        </div>
+
+        <!-- Cast table -->
+        <div class="cs-card">
+          <div class="cs-card-title">演员通告</div>
+          <div class="cs-card-body" style="padding-bottom:8px">
+            <div class="cs-table-wrap">
+              <table class="cs-table">
+                <thead>
+                  <tr>
+                    <th>角色</th>
+                    <th>演员</th>
+                    <th style="width:72px">化妆时间</th>
+                    <th style="width:72px">到组时间</th>
+                    <th style="width:72px">上场时间</th>
+                    <th style="width:48px">状态</th>
+                    <th>服装备注</th>
+                    <th style="width:30px"></th>
+                  </tr>
+                </thead>
+                <tbody id="cs-cast-tbody"></tbody>
+              </table>
+            </div>
+            <button class="cs-add-row" id="btn-add-cast-row">+ 添加演员</button>
+          </div>
+        </div>
+
+        <!-- Props -->
+        <div class="cs-card">
+          <div class="cs-card-title">道具清单</div>
+          <div class="cs-card-body">
+            <div id="cs-props-list"></div>
+          </div>
+        </div>
+
+        <!-- General notes -->
+        <div class="cs-card">
+          <div class="cs-card-title">注意事项 / 拍摄说明</div>
+          <div class="cs-card-body">
+            <textarea class="cs-input cs-textarea" id="cs-general-notes" placeholder="拍摄注意事项、特殊要求、安全提示..."></textarea>
+          </div>
+        </div>
+
+        <!-- Next day preview -->
+        <div class="cs-card">
+          <div class="cs-card-title">明日预告</div>
+          <div class="cs-card-body">
+            <textarea class="cs-input cs-textarea" id="cs-next-day-preview" rows="3" placeholder="明日拍摄安排预告..."></textarea>
+          </div>
+        </div>
+
+      </div><!-- #cs-editor-content -->
+    </div><!-- #cs-editor-wrap -->
+
+    <!-- Save bar -->
+    <div id="cs-save-bar" style="display:none">
+      <button id="btn-save-cs" disabled>保存通告单</button>
+      <span id="cs-save-hint">修改未保存</span>
+    </div>
+  </div><!-- #cs-right -->
+
+</div><!-- #cs-main -->
+
+<!-- Status bar -->
+<div id="cs-statusbar">
+  <span id="cs-statusbar-text"></span>
+</div>
+
+<!-- LLM Suggestion Dialog -->
+<div id="dlg-llm-backdrop" class="cs-modal-backdrop hidden" onclick="closeLLMDialog(event)">
+  <div class="cs-modal" onclick="event.stopPropagation()">
+
+    <div class="cs-modal-header">
+      <span class="cs-modal-header-icon">✨</span>
+      <div class="cs-modal-header-text">
+        <div class="cs-modal-title">AI 拍摄注意事项</div>
+        <div class="cs-modal-subtitle" id="dlg-llm-subtitle">分析中...</div>
+      </div>
+      <button class="cs-modal-close" onclick="closeLLMDialog()">✕</button>
+    </div>
+
+    <!-- Loading state -->
+    <div id="dlg-llm-loading" class="cs-modal-loading">
+      <div class="cs-modal-spinner"></div>
+      <div class="cs-modal-loading-text">AI 正在分析场次内容，请稍候...</div>
+    </div>
+
+    <!-- Error state -->
+    <div id="dlg-llm-error" class="cs-modal-error" style="display:none">
+      <div class="cs-modal-error-icon">⚠️</div>
+      <div class="cs-modal-error-msg" id="dlg-llm-error-msg">分析失败</div>
+      <button class="cs-modal-error-retry" onclick="llmEnhance()">重新尝试</button>
+    </div>
+
+    <!-- Result state -->
+    <div id="dlg-llm-result" style="display:none; flex-direction:column; flex:1; overflow:hidden; min-height:0;">
+      <div class="cs-modal-hint-bar">勾选需要纳入通告备注的条目，点击「应用所选」追加到备注文本框</div>
+      <div class="cs-modal-body">
+        <div id="dlg-llm-sections"></div>
+      </div>
+      <div class="cs-modal-select-bar">
+        <input type="checkbox" id="dlg-llm-select-all" onchange="toggleSelectAll(this.checked)">
+        <label for="dlg-llm-select-all">全选 / 取消全选</label>
+      </div>
+      <div class="cs-modal-footer">
+        <button class="cs-modal-btn cs-modal-btn-ghost" onclick="closeLLMDialog()">关闭</button>
+        <button class="cs-modal-btn cs-modal-btn-secondary" id="dlg-btn-copy" onclick="copyLLMResult()">复制全文</button>
+        <button class="cs-modal-btn cs-modal-btn-primary" onclick="applySelectedSections()">应用所选</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/callsheet.js"></script>
+</body>
+</html>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧本拆解 - Script Breakdown</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Toolbar -->
+    <div id="toolbar">
+        <button id="btn-import" title="导入剧本 (Ctrl+O)">导入剧本</button>
+        <span class="separator"></span>
+        <button id="btn-detect" title="自动识别 (Ctrl+D)" disabled>自动识别</button>
+        <button id="btn-llm-detect" title="LLM 辅助识别 (Ctrl+L)" disabled>LLM 辅助</button>
+        <button id="btn-pdf-llm" title="LLM 识别 PDF 场次结构（仅 PDF 文件可用）" disabled>PDF识别</button>
+        <span class="separator"></span>
+        <button id="btn-undo" title="撤销 (Ctrl+Z)" disabled>撤销</button>
+        <button id="btn-redo" title="恢复 (Ctrl+Shift+Z)" disabled>恢复</button>
+        <span class="separator"></span>
+        <button id="btn-export-txt" title="导出 TXT (Ctrl+E)" disabled>TXT</button>
+        <button id="btn-export-csv" title="导出 CSV / Excel (.xlsx)" disabled>导出表格</button>
+        <span class="separator"></span>
+        <button id="btn-export-project-quick" title="导出工程文件（.sbp）用于协作" disabled>导出工程</button>
+        <button id="btn-import-project-quick" title="从工程文件（.sbp）导入">导入工程</button>
+        <input type="file" id="project-archive-input-quick" accept=".sbp,.zip" hidden>
+        <span class="separator"></span>
+        <button id="btn-split-mode" title="手动拆分场次 (Ctrl+B)" disabled>拆分</button>
+        <span class="separator"></span>
+        <button id="btn-project" title="项目管理">项目</button>
+        <button id="btn-episodes" title="集数管理" disabled>集数</button>
+        <button id="btn-save-project" title="保存项目 (Ctrl+S)" disabled>保存</button>
+        <span id="episode-indicator" class="episode-indicator" style="display:none"></span>
+        <span class="separator"></span>
+        <button id="btn-llm-settings">LLM 设置</button>
+        <button id="btn-prefs-settings">偏好设置</button>
+        <span class="separator"></span>
+        <button id="btn-schedule" title="排期管理（智能排期）" onclick="location.href='/schedule'">排期管理</button>
+        <button id="btn-overview" title="跨集总览" onclick="location.href='/overview'">总览</button>
+        <button id="btn-callsheet" title="通告中心" onclick="location.href='/callsheet'">通告中心</button>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="file-input" accept=".txt,.text,.pdf,.docx,.fdx" hidden>
+
+    <!-- Main three-panel layout -->
+    <div id="main">
+        <!-- Left panel: Scene list -->
+        <div id="panel-left" class="panel">
+            <div class="panel-header">
+                <span id="scene-list-title">场次列表</span>
+                <div style="display:flex;gap:4px">
+                    <button id="btn-group-type" class="btn-inline" title="按场景类型分组">类别</button>
+                    <button id="btn-select-mode" class="btn-inline" title="批量选择场次">选择</button>
+                </div>
+            </div>
+            <div id="batch-actions">
+                <span id="batch-count">已选 0 项</span>
+                <button id="btn-select-all" class="btn-inline">全选</button>
+                <button id="btn-deselect-all" class="btn-inline">取消全选</button>
+                <button id="btn-delete-selected" class="btn-danger" disabled>删除所选</button>
+                <button id="btn-cancel-select" class="btn-inline">退出</button>
+            </div>
+            <div id="scene-list" class="panel-body"></div>
+        </div>
+
+        <!-- Resize handle -->
+        <div class="resize-handle" data-left="panel-left" data-right="panel-center"></div>
+
+        <!-- Center panel: Script view -->
+        <div id="panel-center" class="panel">
+            <div class="panel-header">
+                <span>剧本内容</span>
+                <span id="line-info" class="header-info"></span>
+                <div style="display:flex;gap:4px">
+                    <button id="btn-edit-content" class="btn-inline" title="进入编辑模式，自由修改剧本内容" disabled>编辑</button>
+                    <button id="btn-content-lock" class="btn-inline" title="锁定内容，防止误编辑">🔓</button>
+                    <button id="btn-line-select-mode" class="btn-inline" title="多选行进行删除">选行</button>
+                </div>
+            </div>
+            <div id="edit-mode-banner" style="display:none">
+                ✏️ 编辑模式 — 自由换行、删改内容，完成后保存
+                <button id="btn-save-edit" class="btn-inline">完成</button>
+                <button id="btn-cancel-edit" class="btn-inline">取消</button>
+            </div>
+            <div id="split-mode-banner" style="display:none">
+                点击任意行拆分场次 &nbsp;|&nbsp; <kbd>Esc</kbd> 退出拆分模式
+            </div>
+            <div id="line-select-banner">
+                <span id="line-select-info">已选 0 行</span>
+                <button id="btn-select-all-lines" class="btn-inline">全选</button>
+                <button id="btn-delete-selected-lines" class="btn-danger" disabled>删除已选行</button>
+                <button id="btn-cancel-line-select" class="btn-inline">退出</button>
+            </div>
+            <div id="script-view" class="panel-body"></div>
+        </div>
+
+        <!-- Resize handle -->
+        <div class="resize-handle" data-left="panel-center" data-right="panel-right"></div>
+
+        <!-- Right panel: Scene detail + Analysis tabs -->
+        <div id="panel-right" class="panel">
+            <div class="panel-header">
+                <div class="tab-bar" style="flex-wrap:nowrap;overflow-x:auto">
+                    <button class="tab-btn active" data-tab="detail">详情</button>
+                    <button class="tab-btn" data-tab="analysis">分析</button>
+                    <button class="tab-btn" data-tab="overview" id="tab-btn-overview" title="在新标签页打开项目总览（人物/地点/道具跨集详情）">总览 ↗</button>
+                </div>
+            </div>
+            <div id="scene-detail" class="panel-body tab-content active" data-tab="detail">
+                <div id="detail-empty" class="detail-placeholder">请选择一个场次</div>
+                <div id="detail-episode-summary" class="detail-episode-summary" style="display:none"></div>
+                <div id="detail-form" style="display:none">
+                    <div class="detail-form-nav">
+                        <button id="btn-back-to-episode" class="btn-inline" title="回到当前集概览">← 该集详情</button>
+                        <span id="detail-scene-label" class="detail-scene-label"></span>
+                    </div>
+                    <div class="form-group-title">基本信息</div>
+                    <div class="form-row">
+                        <label>场次号:</label>
+                        <input type="number" id="detail-num" min="1" max="9999">
+                    </div>
+                    <div class="form-row">
+                        <label>标题:</label>
+                        <input type="text" id="detail-heading" placeholder="场景标题">
+                        <button id="btn-reparse" class="btn-inline" title="从标题自动解析内外景/地点/时间">解析</button>
+                    </div>
+                    <div class="form-row">
+                        <label>内/外景:</label>
+                        <select id="detail-int-ext">
+                            <option value=""></option>
+                            <option value="内">内</option>
+                            <option value="外">外</option>
+                            <option value="内外">内外</option>
+                            <option value="INT">INT</option>
+                            <option value="EXT">EXT</option>
+                            <option value="INT/EXT">INT/EXT</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>地点:</label>
+                        <input type="text" id="detail-location" placeholder="场景地点">
+                    </div>
+                    <div class="form-row">
+                        <label>时间:</label>
+                        <select id="detail-time">
+                            <option value=""></option>
+                            <option value="日">日</option>
+                            <option value="夜">夜</option>
+                            <option value="晨">晨</option>
+                            <option value="黄昏">黄昏</option>
+                            <option value="DAY">DAY</option>
+                            <option value="NIGHT">NIGHT</option>
+                            <option value="DAWN">DAWN</option>
+                            <option value="DUSK">DUSK</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>场景类型:</label>
+                        <select id="detail-scene-type">
+                            <option value="">-- 未分类 --</option>
+                        </select>
+                    </div>
+                    <!-- 制作分类（引擎自动识别）-->
+                    <div id="detail-type-key-row" class="form-row" style="display:none">
+                        <label>制作分类:</label>
+                        <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+                            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                                <span id="detail-type-key-label" style="font-weight:600;font-size:12px"></span>
+                                <span id="detail-type-key-confidence" style="font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600"></span>
+                                <span id="detail-type-key-method" style="font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600"></span>
+                            </div>
+                            <div id="detail-type-key-detail" style="font-size:11px;color:#888"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-title">范围</div>
+                    <div class="form-row">
+                        <label>起始行:</label>
+                        <span id="detail-start-line">-</span>
+                    </div>
+                    <div class="form-row">
+                        <label>结束行:</label>
+                        <span id="detail-end-line">-</span>
+                    </div>
+                    <div class="form-row">
+                        <label>置信度:</label>
+                        <span id="detail-confidence">-</span>
+                    </div>
+                    <div class="form-row">
+                        <label>人工校准:</label>
+                        <span id="detail-adjusted">-</span>
+                    </div>
+
+                    <div class="form-group-title">摘要</div>
+                    <textarea id="detail-summary" placeholder="场次摘要..." rows="4"></textarea>
+                    <button id="btn-summarize" class="btn-secondary">LLM 凝练</button>
+                    <button id="btn-apply" class="btn-primary">应用修改</button>
+
+                    <!-- 拍摄时长估算 -->
+                    <div id="detail-duration-section" style="display:none;margin-top:10px">
+                        <div class="form-group-title" style="display:flex;align-items:center;justify-content:space-between">
+                            拍摄时长估算
+                            <button id="btn-refresh-duration" class="btn-inline" title="重新计算当前场次时长">刷新</button>
+                        </div>
+                        <div class="form-row">
+                            <label>预估时长:</label>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <input type="number" id="detail-duration-hours" step="0.05" min="0" max="24"
+                                    style="width:72px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px"
+                                    placeholder="0.0" title="可手动覆盖估算值">
+                                <span style="font-size:12px;color:#888">小时（手动可覆盖）</span>
+                                <button id="btn-save-duration" class="btn-inline" title="保存手动修改的时长">保存</button>
+                            </div>
+                        </div>
+                        <div id="detail-duration-breakdown"
+                            style="display:none;margin-top:6px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;font-size:11px">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Episode synopsis (always shown at bottom when data loaded) -->
+                <div id="detail-synopsis-section" class="detail-synopsis-section" style="display:none">
+                    <div class="synopsis-header form-group-title">
+                        集数梗概
+                        <div style="display:flex;gap:4px;align-items:center">
+                            <button id="btn-generate-synopsis" class="btn-inline" title="调用 LLM 自动生成本集梗概">LLM 生成</button>
+                            <button id="btn-toggle-synopsis" class="btn-inline">收起</button>
+                        </div>
+                    </div>
+                    <div id="synopsis-body">
+                        <textarea id="synopsis-textarea" class="synopsis-textarea" placeholder="点击「LLM 生成」自动总结本集梗概，或在此处直接编辑..." rows="5"></textarea>
+                        <button id="btn-save-synopsis" class="btn-inline" style="margin-top:4px">保存梗概</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overview tab: cross-episode aggregate -->
+            <div id="overview-panel" class="panel-body tab-content" data-tab="overview" style="display:none">
+                <div id="overview-empty" class="detail-placeholder">请先打开项目以查看总览</div>
+                <div id="overview-content" style="display:none">
+                    <div class="form-group-title overview-project-title"></div>
+                    <div class="overview-stats"></div>
+
+                    <div class="form-group-title">
+                        集数汇总
+                        <button id="btn-export-summary" class="btn-inline" title="导出项目总表">导出总表</button>
+                    </div>
+                    <div id="overview-episodes"></div>
+
+                    <div class="form-group-title">全局人物（跨集）</div>
+                    <div id="overview-characters" class="entity-list"></div>
+
+                    <div class="form-group-title">全局道具（跨集）</div>
+                    <div id="overview-props" class="entity-list"></div>
+                </div>
+            </div>
+
+            <div id="analysis-panel" class="panel-body tab-content" data-tab="analysis" style="display:none">
+                <div id="analysis-empty" class="detail-placeholder">请选择场次后提取实体，或执行全部提取</div>
+
+                <!-- Per-scene extraction controls -->
+                <div id="analysis-scene-section" style="display:none">
+                    <div class="analysis-nav">
+                        <button id="btn-back-analysis" class="btn-inline" title="回到全局概览">← 全局总览</button>
+                        <span id="analysis-scene-label" class="detail-scene-label"></span>
+                    </div>
+                    <div class="form-group-title">当前场次实体</div>
+                    <div class="analysis-actions">
+                        <label class="llm-use-toggle" title="勾选后调用 LLM 辅助提取，需先配置 LLM 设置">
+                            <input type="checkbox" id="chk-use-llm"> LLM 辅助
+                        </label>
+                        <button id="btn-extract-scene" class="btn-secondary">提取当前场次</button>
+                        <button id="btn-extract-all" class="btn-secondary">全部提取</button>
+                    </div>
+                    <!-- 场景类型识别 -->
+                    <div class="analysis-actions" style="margin-top:4px">
+                        <button id="btn-classify-scene" class="btn-secondary" title="识别当前场次制作类型">识别类型</button>
+                        <button id="btn-classify-all" class="btn-secondary" title="批量识别所有场次制作类型（勾选上方选项可用LLM）">全集识别</button>
+                    </div>
+                    <!-- LLM 识别勾选 + 进度 -->
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap">
+                        <label class="llm-use-toggle" title="勾选后识别时调用 LLM（需先配置 LLM 设置）">
+                            <input type="checkbox" id="chk-use-llm-classify"> LLM 辅助识别
+                        </label>
+                    </div>
+                    <div id="classify-progress-bar-wrap" style="display:none;margin:4px 0 2px">
+                        <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden">
+                            <div id="classify-progress-bar" style="height:100%;background:var(--accent-color,#2563eb);width:0%;transition:width .3s"></div>
+                        </div>
+                        <div id="classify-progress-text" style="font-size:11px;color:#888;margin-top:2px"></div>
+                    </div>
+
+                    <div id="scene-entities">
+                        <div class="entity-section">
+                            <div class="entity-label">人物</div>
+                            <div id="scene-characters" class="entity-tags"></div>
+                        </div>
+                        <div class="entity-section">
+                            <div class="entity-label">道具</div>
+                            <div id="scene-props" class="entity-tags"></div>
+                        </div>
+                        <div class="entity-section">
+                            <div class="entity-label">场景类型</div>
+                            <div id="scene-type" class="entity-tags"></div>
+                        </div>
+                        <!-- 制作分类（引擎）-->
+                        <div class="entity-section" id="scene-type-key-section" style="display:none">
+                            <div class="entity-label" style="display:flex;align-items:center;justify-content:space-between">
+                                制作分类
+                                <button id="btn-classify-scene-inline" class="btn-inline" style="font-size:10px" title="重新识别此场次类型">重识别</button>
+                            </div>
+                            <div id="scene-type-key-display" class="entity-tags"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global entities -->
+                <div id="analysis-global-section">
+                    <div class="form-group-title">
+                        全局人物
+                        <div style="display:flex;gap:4px;align-items:center">
+                            <button id="btn-merge-chars" class="btn-inline" title="合并同名人物">合并</button>
+                            <button id="btn-analyze-all" class="btn-inline" title="LLM 全局人物分析">全局分析</button>
+                        </div>
+                    </div>
+                    <div id="global-characters" class="entity-list"></div>
+
+                    <div id="global-analysis-result" class="analysis-result" style="display:none">
+                        <div class="form-group-title">
+                            全局分析结果
+                            <button id="btn-toggle-analysis" class="btn-inline">收起</button>
+                        </div>
+                        <textarea id="global-analysis-text" class="analysis-text-edit"></textarea>
+                    </div>
+
+                    <div class="form-group-title">
+                        全局道具
+                        <button id="btn-merge-props" class="btn-inline" title="合并同名道具">合并</button>
+                    </div>
+                    <div id="global-props" class="entity-list"></div>
+
+                    <div class="form-group-title">
+                        地点统筹
+                        <button id="btn-group-location" class="btn-inline" title="按地点分组场次列表">分组显示</button>
+                    </div>
+                    <div id="global-locations" class="entity-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="statusbar">
+        <span id="status-text">就绪 - 请导入剧本文件</span>
+        <span id="status-spinner" class="spinner" style="display:none"></span>
+    </div>
+
+    <!-- Context menu -->
+    <div id="context-menu" class="context-menu" style="display:none">
+        <div class="context-item" id="ctx-insert-break">在此处插入场次分隔</div>
+        <div class="context-item" id="ctx-delete-break">删除此场次分隔</div>
+        <div class="context-item" id="ctx-merge-next">合并到下一场</div>
+        <div class="context-item" id="ctx-merge-prev">合并到上一场</div>
+        <div class="context-item context-separator" id="ctx-delete-line" style="color:#dc2626;">删除此行</div>
+        <div class="context-item" id="ctx-delete-scene" style="color:#dc2626;">删除此场次</div>
+    </div>
+
+    <!-- Import Mode Dialog (when project is open) -->
+    <div id="import-dialog-overlay" class="dialog-overlay" style="display:none">
+        <div class="dialog">
+            <div class="dialog-header">导入剧本</div>
+            <div class="dialog-body">
+                <p style="margin-bottom:12px;color:#555;font-size:13px">当前已打开项目，请选择导入方式：</p>
+                <div id="import-episode-name-row" class="form-row" style="margin-bottom:12px">
+                    <label>集数名称:</label>
+                    <input type="text" id="import-episode-name" placeholder="新集数名称...">
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="import-as-episode-btn" class="btn-primary" style="width:auto;margin-top:0">添加为新集数</button>
+                <button id="import-standalone-btn" class="btn-secondary" style="width:auto;margin-top:0">直接导入（不保存）</button>
+                <button id="import-cancel-btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options Dialog -->
+    <div id="export-dialog-overlay" class="dialog-overlay" style="display:none">
+        <div class="dialog">
+            <div class="dialog-header">导出选项</div>
+            <div class="dialog-body">
+                <div class="form-group-title">基础工作表（必选）</div>
+                <div class="export-option-row">
+                    <input type="checkbox" checked disabled id="export-opt-scenes">
+                    <label for="export-opt-scenes">场次列表（场次号、标题、内外景、地点、时间、摘要）</label>
+                </div>
+
+                <div class="form-group-title">可选工作表</div>
+                <div class="export-option-row">
+                    <input type="checkbox" id="export-opt-characters">
+                    <label for="export-opt-characters">人物汇总（人物名称 + 出现场次列表）</label>
+                </div>
+                <div class="export-option-row">
+                    <input type="checkbox" id="export-opt-props">
+                    <label for="export-opt-props">道具汇总（道具名称 + 出现场次列表）</label>
+                </div>
+                <div class="export-option-row">
+                    <input type="checkbox" id="export-opt-entities">
+                    <label for="export-opt-entities">场景实体明细（每场的人物与道具清单）</label>
+                </div>
+                <div class="export-option-row">
+                    <input type="checkbox" id="export-opt-colors">
+                    <label for="export-opt-colors">场景色谱（按地点/时间分类的拍摄计划参考）</label>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="export-csv-simple-btn" class="btn-secondary" style="width:auto;margin-top:0">仅导出 CSV</button>
+                <span class="spacer"></span>
+                <button id="export-xlsx-btn" class="btn-primary" style="width:auto;margin-top:0">导出 Excel (.xlsx)</button>
+                <button id="export-dialog-cancel-btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Dialog (LLM) -->
+    <div id="llm-dialog-overlay" class="dialog-overlay" style="display:none">
+        <div class="dialog dialog-wide">
+            <div class="dialog-header">LLM 设置</div>
+
+            <div class="dialog-body">
+                <!-- Presets: all major services -->
+                <div class="form-group-title">
+                    常用服务
+                    <span style="font-size:11px;font-weight:normal;color:#888">点击自动填入地址与模型</span>
+                </div>
+                <div class="llm-preset-bar" id="llm-preset-section">
+                    <!-- 国内 -->
+                    <button class="btn-inline llm-preset-btn" data-preset="deepseek">DeepSeek</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="moonshot">Moonshot</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="qwen">通义千问</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="zhipu">智谱 GLM</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="minimax">MiniMax</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="yi">零一万物</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="stepfun">阶跃星辰</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="siliconflow">硅基流动</button>
+                    <!-- 国际 -->
+                    <button class="btn-inline llm-preset-btn" data-preset="openai_official">OpenAI</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="claude">Claude</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="gemini">Gemini</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="groq">Groq</button>
+                    <button class="btn-inline llm-preset-btn" data-preset="mistral">Mistral</button>
+                    <!-- 本地 -->
+                    <button class="btn-inline llm-preset-btn" data-preset="ollama">Ollama 本地</button>
+                </div>
+
+                <!-- Connection config -->
+                <div class="form-group-title">连接配置</div>
+                <div class="form-row">
+                    <label>API 地址:</label>
+                    <input type="text" id="llm-base-url" placeholder="https://api.deepseek.com/v1" autocomplete="off">
+                </div>
+                <div id="llm-endpoint-preview" class="llm-endpoint-preview"></div>
+                <div class="form-row">
+                    <label>API 密钥:</label>
+                    <input type="password" id="llm-api-key" placeholder="输入 API Key..." autocomplete="off">
+                </div>
+                <div class="form-row">
+                    <label>模型名称:</label>
+                    <input type="text" id="llm-model" placeholder="如 deepseek-chat" style="flex:1;min-width:0">
+                    <select id="llm-model-select" class="llm-model-select">
+                        <option value="">常用模型 ↓</option>
+                    </select>
+                </div>
+                <div id="llm-hint" class="llm-hint"></div>
+
+                <!-- Parameters -->
+                <div class="form-group-title">参数</div>
+                <div class="form-row">
+                    <label>Temperature:</label>
+                    <input type="number" id="llm-temperature" value="0.3" min="0" max="2" step="0.1" style="max-width:100px">
+                    <span style="font-size:12px;color:#888">（0 确定 · 1 创意）</span>
+                </div>
+                <div class="form-row">
+                    <label>Max Tokens:</label>
+                    <input type="number" id="llm-max-tokens" value="4096" min="256" max="32768" step="256" style="max-width:100px">
+                </div>
+            </div>
+
+            <div class="dialog-footer">
+                <button id="llm-test-btn" class="btn-secondary">测试连接</button>
+                <span id="llm-test-result" class="llm-test-result"></span>
+                <span class="spacer"></span>
+                <button id="llm-ok-btn" class="btn-primary">保存</button>
+                <button id="llm-cancel-btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preferences Dialog (时长参数 & 系数) -->
+    <div id="prefs-dialog-overlay" class="dialog-overlay" style="display:none">
+        <div class="dialog dialog-wide">
+            <div class="dialog-header">偏好设置</div>
+            <div class="dialog-body" style="max-height:70vh;overflow-y:auto">
+
+                <div class="form-group-title">基本参数</div>
+                <div class="form-row">
+                    <label>每页行数:</label>
+                    <input type="number" id="dp2-lines-per-page" value="30" min="10" max="80" step="1" style="max-width:80px">
+                    <span style="font-size:12px;color:#888">中文剧本约30行/页，英文约55行/页</span>
+                </div>
+                <div class="form-row">
+                    <label>最低页数:</label>
+                    <input type="number" id="dp2-min-pages" value="0.125" min="0.05" max="1" step="0.025" style="max-width:80px">
+                    <span style="font-size:12px;color:#888">最短场次按此页数计（默认1/8页）</span>
+                </div>
+                <div class="form-row">
+                    <label>转场基准(分):</label>
+                    <input type="number" id="dp2-transition-base" value="40" min="0" max="180" step="5" style="max-width:80px">
+                    <span style="font-size:12px;color:#888">每次换拍摄地的基础转场时间</span>
+                </div>
+                <div class="form-row">
+                    <label>项目类型:</label>
+                    <select id="dp2-genre-key" style="flex:1;max-width:240px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px"></select>
+                    <span id="dp2-genre-factor" style="font-size:12px;color:#888;margin-left:6px"></span>
+                </div>
+
+                <div class="form-group-title" style="margin-top:14px">
+                    表A — 场景类型基准时间（分钟/页）
+                    <span style="font-size:11px;font-weight:normal;color:#888">可按项目实际工作节奏调整</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:12px" id="dp2-table-a">
+                    <thead>
+                        <tr style="background:#f8fafc">
+                            <th style="text-align:left;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px">类型键</th>
+                            <th style="text-align:left;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px">标签</th>
+                            <th style="text-align:center;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px;width:80px">基准(分/页)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dp2-table-a-body"></tbody>
+                </table>
+
+                <div class="form-group-title" style="margin-top:14px">
+                    表B — 项目类型系数
+                    <span style="font-size:11px;font-weight:normal;color:#888">乘以表A后的综合难度系数</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:12px" id="dp2-table-b">
+                    <thead>
+                        <tr style="background:#f8fafc">
+                            <th style="text-align:left;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px">类型键</th>
+                            <th style="text-align:left;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px">标签</th>
+                            <th style="text-align:center;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px;width:80px">系数</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dp2-table-b-body"></tbody>
+                </table>
+
+                <div class="form-group-title" style="margin-top:14px">
+                    表C — 额外时间因子（分钟）
+                    <span style="font-size:11px;font-weight:normal;color:#888">按条件叠加到场景时长</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:12px">
+                    <thead>
+                        <tr style="background:#f8fafc">
+                            <th style="text-align:left;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px">因子键</th>
+                            <th style="text-align:left;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px">标签</th>
+                            <th style="text-align:center;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px;width:80px">分钟</th>
+                            <th style="text-align:left;padding:5px 8px;border-bottom:2px solid #e2e8f0;color:#888;font-size:11px">适用时机</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dp2-table-c-body"></tbody>
+                </table>
+
+                <!-- 自定义场景类型 -->
+                <div class="form-group-title" style="margin-top:14px">
+                    自定义场景类型
+                    <span style="font-size:11px;font-weight:normal;color:#888">可添加自定义类型，用于分类和时长估算</span>
+                </div>
+                <div id="dp2-custom-types-list" style="margin-bottom:8px"></div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:4px">
+                    <input type="text" id="dp2-new-type-key" placeholder="类型键（如AX_水下戏）" style="width:130px;font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px">
+                    <input type="text" id="dp2-new-type-label" placeholder="名称（如水下戏）" style="width:100px;font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px">
+                    <input type="number" id="dp2-new-type-minutes" placeholder="分钟" value="20" min="1" max="300" style="width:55px;font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px">
+                    <input type="text" id="dp2-new-type-keywords" placeholder="关键词（逗号分隔）" style="flex:1;min-width:100px;font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px">
+                    <button id="dp2-add-custom-type" class="btn-secondary" style="white-space:nowrap;font-size:12px;padding:3px 10px">+ 添加</button>
+                </div>
+
+            </div>
+            <div class="dialog-footer">
+                <button id="dp2-reset" style="color:#888;border-color:#ddd" class="btn-secondary">恢复默认</button>
+                <span class="spacer"></span>
+                <button id="dp2-save" class="btn-primary">保存参数</button>
+                <button id="dp2-cancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entity Merge Dialog -->
+    <div id="merge-dialog-overlay" class="dialog-overlay" style="display:none">
+        <div class="dialog">
+            <div class="dialog-header">合并<span id="merge-type-label">人物</span></div>
+            <div class="dialog-body">
+                <div class="form-group-title">合并目标名称</div>
+                <div class="form-row">
+                    <label>合并为:</label>
+                    <input type="text" id="merge-target-input" placeholder="输入合并后的名称...">
+                </div>
+                <div class="form-group-title">选择要合并的名称（多选）</div>
+                <div id="merge-source-list" style="max-height:220px;overflow-y:auto;border:1px solid #eee;border-radius:4px;padding:4px"></div>
+            </div>
+            <div class="dialog-footer">
+                <span class="spacer"></span>
+                <button id="merge-confirm-btn" class="btn-primary" style="width:auto;display:inline">确认合并</button>
+                <button id="merge-cancel-btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Dialog -->
+    <div id="project-dialog-overlay" class="dialog-overlay" style="display:none">
+        <div class="dialog dialog-wide">
+            <div class="dialog-header">项目管理</div>
+            <div class="dialog-body">
+                <div class="form-group-title">新建项目</div>
+                <div class="form-row">
+                    <label>项目名称:</label>
+                    <input type="text" id="new-project-name" placeholder="输入项目名称...">
+                    <button id="btn-create-project" class="btn-inline">创建</button>
+                </div>
+
+                <div class="form-group-title">已有项目</div>
+                <div id="project-list" class="project-list">
+                    <div style="color:#aaa;font-size:13px;padding:8px 0;">暂无项目</div>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="btn-export-project" class="btn-secondary" style="width:auto;margin-top:0" disabled title="导出工程文件（.sbp）">导出工程</button>
+                <button id="btn-import-project" class="btn-secondary" style="width:auto;margin-top:0" title="从工程文件导入">导入工程</button>
+                <input type="file" id="project-archive-input" accept=".sbp,.zip" hidden>
+                <span class="spacer"></span>
+                <button id="project-close-btn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Episode Dialog -->
+    <div id="episode-dialog-overlay" class="dialog-overlay" style="display:none">
+        <div class="dialog dialog-wide">
+            <div class="dialog-header">
+                <span id="episode-dialog-title">集数管理</span>
+            </div>
+            <div class="dialog-body">
+                <div id="episode-list" class="episode-list">
+                    <div style="color:#aaa;font-size:13px;padding:8px 0;">暂无集数</div>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="btn-add-episode" class="btn-secondary" style="width:auto;">+ 添加集数</button>
+                <input type="file" id="episode-file-input" accept=".txt,.text,.pdf,.docx,.fdx" hidden>
+                <span class="spacer"></span>
+                <button id="episode-close-btn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/panels.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

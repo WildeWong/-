@@ -1,0 +1,1770 @@
+/* ── Reset & Base ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --panel-bg: #ffffff;
+    --border: #ddd;
+    --text: #333;
+    --text-secondary: #777;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --toolbar-bg: #fafafa;
+    --header-bg: #f0f0f0;
+    --line-hover: #f0f4ff;
+    --selected: #e0edff;
+    --break-line: #2563eb;
+    --confidence-high: #dbeafe;
+    --confidence-mid: #fef3c7;
+    --confidence-low: #fecaca;
+    --manual-adjusted: #dcfce7;
+    --font-mono: "Menlo", "Monaco", "Consolas", "Liberation Mono", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+html, body {
+    height: 100%;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    overflow: hidden;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────── */
+#toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border);
+    height: 42px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+#toolbar button {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    transition: background 0.15s, border-color 0.15s;
+}
+
+#toolbar button:hover:not(:disabled) {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+#toolbar button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+/* ── Main Layout ──────────────────────────────────────────── */
+#main {
+    display: flex;
+    height: calc(100vh - 42px - 28px); /* toolbar + statusbar */
+    overflow: hidden;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+#panel-left  { width: 20%; }
+#panel-center { flex: 1; }
+#panel-right { width: 25%; }
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.header-info {
+    font-weight: normal;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.panel-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--panel-bg);
+}
+
+/* ── Tab Bar ─────────────────────────────────────────────── */
+.tab-bar {
+    display: flex;
+    gap: 0;
+    width: 100%;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+/* Tab content panels */
+.tab-content {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--panel-bg);
+}
+
+/* ── Resize Handle ────────────────────────────────────────── */
+.resize-handle {
+    width: 5px;
+    cursor: col-resize;
+    background: var(--border);
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+    background: var(--accent);
+}
+
+/* ── Scene List (Left Panel) ──────────────────────────────── */
+#scene-list {
+    padding: 4px 0;
+}
+
+.scene-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.1s;
+}
+
+.scene-item:hover {
+    background: var(--line-hover);
+}
+
+.scene-item.selected {
+    background: var(--selected);
+    font-weight: 600;
+}
+
+.scene-item.confidence-low { color: var(--danger); }
+.scene-item.confidence-mid { color: var(--warning); }
+.scene-item.manual-adjusted { color: var(--success); }
+
+/* ── Script View (Center Panel) ───────────────────────────── */
+#script-view {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.65;
+    padding: 0;
+    cursor: text;
+    user-select: text;
+}
+
+.script-line {
+    display: flex;
+    padding: 0 8px 0 0;
+    min-height: 22px;
+    transition: background 0.1s;
+}
+
+.script-line:hover {
+    background: var(--line-hover);
+}
+
+.script-line.selected-scene {
+    background: var(--selected);
+}
+
+.line-number {
+    width: 50px;
+    min-width: 50px;
+    text-align: right;
+    padding-right: 8px;
+    color: #aaa;
+    user-select: none;
+    font-size: 12px;
+    line-height: 1.65;
+    border-right: 1px solid #eee;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.line-number.break-line {
+    color: var(--break-line);
+    font-weight: 700;
+}
+
+.line-content {
+    white-space: pre-wrap;
+    word-break: break-all;
+    flex: 1;
+}
+
+.line-content.scene-heading {
+    font-weight: 700;
+}
+
+.line-content.confidence-high {
+    background: var(--confidence-high);
+}
+
+.line-content.confidence-mid {
+    background: var(--confidence-mid);
+}
+
+.line-content.confidence-low {
+    background: var(--confidence-low);
+}
+
+.line-content.manual-adjusted {
+    background: var(--manual-adjusted);
+}
+
+/* Scene separator line */
+.scene-separator {
+    border-top: 2px solid var(--accent);
+    margin-top: 2px;
+}
+
+/* ── Scene Detail (Right Panel) ───────────────────────────── */
+#scene-detail {
+    padding: 12px;
+}
+
+.detail-placeholder {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
+/* ── Episode summary (shown in detail panel when no scene selected) ── */
+.detail-episode-summary {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.ep-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ep-summary-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    margin-right: 8px;
+}
+
+/* Legacy title style (kept for compatibility) */
+.episode-summary-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 14px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.episode-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.episode-stat {
+    text-align: center;
+    padding: 12px 6px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.episode-stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.episode-stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.episode-summary-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
+.form-group-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-group-title:first-child {
+    margin-top: 0;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.form-row label {
+    width: 65px;
+    min-width: 65px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+.form-row input,
+.form-row select {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+}
+
+.form-row input:focus,
+.form-row select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.form-row span {
+    font-size: 13px;
+}
+
+#detail-summary {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    resize: vertical;
+    margin-bottom: 8px;
+}
+
+#detail-summary:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn-primary {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-top: 8px;
+    transition: background 0.15s;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    display: block;
+    width: 100%;
+    padding: 7px 14px;
+    background: white;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-inline {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--accent);
+    transition: background 0.15s, border-color 0.15s;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: normal;
+}
+
+.btn-inline:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+/* ── Analysis Panel ──────────────────────────────────────── */
+#analysis-panel {
+    padding: 12px;
+}
+
+.analysis-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.analysis-actions .btn-secondary {
+    width: auto;
+    flex: 1;
+}
+
+.llm-use-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 4px 0;
+}
+
+.llm-use-toggle input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+/* Entity tags */
+.entity-section {
+    margin-bottom: 12px;
+}
+
+.entity-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.entity-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.entity-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #e8f0fe;
+    color: #1a56db;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.entity-tag.type-tag {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.entity-empty {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Character & prop lists */
+.entity-list {
+    margin-bottom: 12px;
+}
+
+.character-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.character-item:last-child {
+    border-bottom: none;
+}
+
+.character-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.character-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.character-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.character-analysis {
+    margin-top: 6px;
+    padding: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+}
+
+.prop-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.prop-item:last-child {
+    border-bottom: none;
+}
+
+.prop-name {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.prop-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* Analysis result */
+.analysis-result {
+    margin-bottom: 12px;
+}
+
+.analysis-text {
+    padding: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+}
+
+.analysis-text-edit {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    padding: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* ── Status Bar ───────────────────────────────────────────── */
+#statusbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    background: var(--toolbar-bg);
+    border-top: 1px solid var(--border);
+    height: 28px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Context Menu ─────────────────────────────────────────── */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    padding: 4px 0;
+    z-index: 1000;
+    min-width: 180px;
+}
+
+.context-item {
+    padding: 7px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.1s;
+}
+
+.context-item:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.context-item.hidden {
+    display: none;
+}
+
+.context-item.context-separator {
+    border-top: 1px solid var(--border);
+    margin-top: 3px;
+    padding-top: 10px;
+}
+
+/* ── Dialog ───────────────────────────────────────────────── */
+.dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.dialog {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    width: 480px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.dialog-header {
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dialog-body {
+    padding: 16px 20px;
+}
+
+.dialog-body .form-row {
+    margin-bottom: 12px;
+}
+
+.dialog-body .form-row label {
+    width: 90px;
+    min-width: 90px;
+}
+
+.dialog-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+}
+
+.dialog-footer .spacer {
+    flex: 1;
+}
+
+.dialog-footer button {
+    padding: 7px 20px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+}
+
+.dialog-footer .btn-primary {
+    width: auto;
+    display: inline;
+    margin-top: 0;
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.dialog-footer .btn-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+.dialog-footer .btn-secondary {
+    width: auto;
+    display: inline;
+    margin-top: 0;
+}
+
+/* ── Entity Editing ───────────────────────────────────────── */
+.entity-tag-editable {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px 2px 8px;
+}
+
+.entity-tag-del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: none;
+    background: transparent;
+    color: #1a56db;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    border-radius: 50%;
+    opacity: 0.6;
+    transition: opacity 0.1s, background 0.1s;
+}
+
+.entity-tag-del:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.1);
+}
+
+.entity-tag.type-tag .entity-tag-del {
+    color: #92400e;
+}
+
+.entity-add-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 4px;
+}
+
+.entity-add-input {
+    width: 90px;
+    padding: 2px 6px;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.entity-add-input:focus {
+    border-color: var(--accent);
+    border-style: solid;
+}
+
+/* Global entity edit row */
+.entity-edit-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+/* Merge dialog source list */
+.merge-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.merge-item:hover {
+    background: var(--line-hover);
+}
+
+.merge-item input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px;
+    height: 14px;
+}
+
+.merge-item-name {
+    font-size: 13px;
+    flex: 1;
+}
+
+.merge-item-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* ── Batch Actions Bar ────────────────────────────────────── */
+#batch-actions {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #fef3c7;
+    border-bottom: 1px solid #fcd34d;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+#batch-actions.visible {
+    display: flex;
+}
+
+#batch-count {
+    flex: 1;
+    color: #92400e;
+    font-weight: 600;
+}
+
+.btn-danger {
+    padding: 4px 10px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+.btn-danger:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Scene list selection mode */
+.scene-item.selectable {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 8px;
+}
+
+.scene-checkbox {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+/* ── Dialog Wide ──────────────────────────────────────────── */
+.dialog-wide {
+    width: 620px;
+    max-width: 95vw;
+}
+
+/* ── LLM Settings Dialog ──────────────────────────────────── */
+.llm-preset-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.llm-preset-btn {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.llm-preset-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.llm-model-select {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 130px;
+    font-size: 12px;
+    padding: 5px 6px;
+}
+
+.llm-endpoint-preview {
+    font-size: 11px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    margin: -6px 0 8px 0;
+    padding-left: 98px;
+    word-break: break-all;
+    line-height: 1.5;
+    min-height: 16px;
+}
+
+.llm-hint {
+    font-size: 11px;
+    color: #888;
+    margin: -4px 0 10px 0;
+    padding-left: 98px;
+    line-height: 1.5;
+}
+
+.llm-test-result {
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+}
+
+.llm-test-ok { color: var(--success); }
+.llm-test-error { color: var(--danger); }
+
+/* ── Project List ─────────────────────────────────────────── */
+.project-list {
+    margin: 8px 0;
+}
+
+.project-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.project-item:hover {
+    background: var(--line-hover);
+}
+
+.project-item-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.project-item-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* ── Episode List ─────────────────────────────────────────── */
+.episode-list {
+    margin: 8px 0;
+}
+
+.episode-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.1s;
+}
+
+.episode-item:hover {
+    background: var(--line-hover);
+}
+
+.episode-item.active {
+    background: var(--selected);
+}
+
+.episode-num {
+    width: 24px;
+    min-width: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.episode-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.episode-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+    min-width: 60px;
+    text-align: right;
+}
+
+.episode-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.episode-actions .btn-inline {
+    font-size: 11px;
+    padding: 2px 6px;
+}
+
+.episode-actions .btn-inline.btn-danger-inline {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.episode-actions .btn-inline.btn-danger-inline:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* ── Episode Drag-and-Drop ────────────────────────────────── */
+.drag-handle {
+    cursor: grab;
+    color: #ccc;
+    padding: 0 4px;
+    user-select: none;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.episode-item.dragging {
+    opacity: 0.4;
+}
+
+.episode-item.drag-over-top {
+    border-top: 2px solid var(--accent);
+}
+
+.episode-item.drag-over-bottom {
+    border-bottom: 2px solid var(--accent);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+.panel-body::-webkit-scrollbar,
+.tab-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.panel-body::-webkit-scrollbar-track,
+.tab-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel-body::-webkit-scrollbar-thumb,
+.tab-content::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.panel-body::-webkit-scrollbar-thumb:hover,
+.tab-content::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* ── Episode Indicator ─────────────────────────────────────── */
+.episode-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    background: #e0f2fe;
+    border: 1px solid #7dd3fc;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #0369a1;
+    cursor: pointer;
+    white-space: nowrap;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.15s;
+}
+
+.episode-indicator:hover {
+    background: #bae6fd;
+}
+
+/* ── Split Mode ────────────────────────────────────────────── */
+/* ── Line select mode ──────────────────────────────────────── */
+#line-select-banner {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #eff6ff;
+    border-bottom: 1px solid #bfdbfe;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+#line-select-banner.visible {
+    display: flex;
+}
+
+#line-select-info {
+    flex: 1;
+    color: #1e40af;
+    font-weight: 600;
+}
+
+.script-line.line-selected {
+    background: #dbeafe !important;
+    border-left: 3px solid #3b82f6 !important;
+}
+
+.script-line.line-selected:hover {
+    background: #bfdbfe !important;
+}
+
+body.line-select-mode #script-view {
+    cursor: pointer;
+}
+
+body.line-select-mode .script-line:hover {
+    background: #f0f9ff;
+}
+
+#split-mode-banner {
+    background: #fef3c7;
+    border-bottom: 1px solid #fcd34d;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    text-align: center;
+    flex-shrink: 0;
+    animation: pulse-banner 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-banner {
+    0%, 100% { background: #fef3c7; }
+    50% { background: #fde68a; }
+}
+
+/* Active split mode: script lines get split cursor */
+body.split-mode #script-view {
+    cursor: crosshair;
+}
+
+body.split-mode .script-line:hover {
+    background: #fff3cd !important;
+    outline: 2px dashed #f59e0b;
+    outline-offset: -2px;
+    cursor: crosshair;
+}
+
+/* Toolbar / panel active state (toggled buttons) */
+#toolbar button.btn-active,
+.btn-inline.btn-active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+/* ── Location Group (Grouped scene list) ──────────────────── */
+.scene-group {
+    border-bottom: 2px solid var(--accent);
+    margin-bottom: 2px;
+}
+
+.scene-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--header-bg);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
+}
+
+.scene-group-header:hover {
+    background: var(--selected);
+}
+
+.scene-group-toggle {
+    font-size: 10px;
+    transition: transform 0.2s;
+    margin-right: 2px;
+}
+
+.scene-group.collapsed .scene-group-toggle {
+    transform: rotate(-90deg);
+}
+
+.scene-group-name {
+    flex: 1;
+}
+
+.scene-group-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+.scene-group.collapsed .scene-group-body {
+    display: none;
+}
+
+/* ── Entity Navigation ─────────────────────────────────────── */
+.character-name.entity-link,
+.prop-name.entity-link {
+    cursor: pointer;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-style: dotted;
+    transition: color 0.15s;
+}
+
+.character-name.entity-link:hover,
+.prop-name.entity-link:hover {
+    color: var(--accent-hover);
+    text-decoration-style: solid;
+}
+
+/* Scene badge: clickable scene list for entity */
+.entity-scene-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex: 1;
+    transition: color 0.15s;
+}
+
+.entity-scene-badge:hover {
+    color: var(--accent);
+}
+
+.entity-scenes-popup {
+    position: absolute;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    padding: 4px 0;
+    min-width: 140px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 500;
+    font-size: 12px;
+}
+
+.entity-scenes-popup-item {
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.entity-scenes-popup-item:hover {
+    background: var(--selected);
+    color: var(--accent);
+}
+
+.character-item,
+.prop-item {
+    position: relative;
+}
+
+/* btn-danger-inline: red inline button */
+.btn-danger-inline {
+    color: var(--danger) !important;
+    border-color: var(--danger) !important;
+}
+
+.btn-danger-inline:hover {
+    background: var(--danger) !important;
+    color: white !important;
+}
+
+/* ── Export Dialog Options ─────────────────────────────────── */
+.export-option-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    transition: background 0.1s;
+}
+
+.export-option-row:hover {
+    background: var(--line-hover);
+}
+
+.export-option-row input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.export-option-row label {
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+.export-option-row input[type="checkbox"]:disabled + label {
+    color: var(--text-secondary);
+    cursor: default;
+}
+
+/* ── Scene Type Badge (scene list item) ────────────────────── */
+.scene-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.scene-type-badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+/* ── Project Overview Tab ──────────────────────────────────── */
+.overview-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.overview-stat {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--confidence-high);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.overview-ep-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+}
+
+.overview-ep-row.active {
+    background: var(--selected);
+}
+
+.overview-ep-name {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.overview-ep-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.overview-entity-row {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 12px;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background 0.1s;
+}
+
+.overview-entity-row:hover {
+    background: var(--line-hover);
+}
+
+.overview-entity-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.overview-entity-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.overview-project-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+}
+
+/* Scene group header colored left border for type groups */
+.scene-group-header {
+    border-left: 4px solid transparent;
+}
+
+/* ── Location item (Analysis tab) ─────────────────────────── */
+.location-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.location-item:last-child {
+    border-bottom: none;
+}
+
+.location-name {
+    font-size: 13px;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Scene list entity highlight ──────────────────────────── */
+.scene-item.entity-highlight {
+    background: #fef9c3;
+    border-left: 3px solid #eab308;
+}
+.scene-item.entity-highlight:hover {
+    background: #fef08a;
+}
+
+/* ── Analysis panel nav bar ────────────────────────────────── */
+.analysis-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0 6px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+/* ── Location inline rename input ─────────────────────────── */
+.location-rename-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    padding: 1px 5px;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    outline: none;
+    color: var(--text);
+}
+
+/* ── Entity Highlight (script view) ───────────────────────── */
+.script-line.entity-highlight {
+    background: #fef9c3;
+    border-left: 3px solid #eab308;
+}
+
+.script-line.entity-highlight:hover {
+    background: #fef08a;
+}
+
+/* Inline text highlight marks */
+mark.text-hl-char {
+    background: #fef08a;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+mark.text-hl-prop {
+    background: #fecaca;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+mark.text-hl-loc {
+    background: #bfdbfe;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+/* Entity name highlighted state */
+.entity-link.entity-link-active {
+    background: #fef9c3;
+    border-radius: 3px;
+    outline: 1px solid #eab308;
+}
+
+/* ── Episode detail expandable entity sections ─────────────── */
+.ep-entity-section {
+    margin-bottom: 4px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.ep-entity-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 12px;
+    user-select: none;
+    transition: background 0.1s;
+}
+
+.ep-entity-header:hover {
+    background: var(--selected);
+}
+
+.ep-entity-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.ep-entity-count {
+    font-weight: normal;
+}
+
+.ep-entity-toggle {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.ep-entity-list {
+    padding: 6px 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.ep-entity-item {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e8f0fe;
+    color: #1a56db;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+}
+
+.ep-entity-item:hover {
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+}
+
+/* ── Detail Form Nav Bar ────────────────────────────────────── */
+.detail-form-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.detail-scene-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+/* ── Episode Synopsis Section ──────────────────────────────── */
+.detail-synopsis-section {
+    padding: 12px 16px;
+    border-top: 1px solid #eee;
+}
+
+.synopsis-textarea {
+    display: block;
+    width: 100%;
+    min-height: 90px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    color: var(--text);
+    resize: vertical;
+    box-sizing: border-box;
+    background: #fafbfc;
+    transition: border-color 0.15s;
+}
+
+.synopsis-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    background: white;
+}
+
+/* ── Inline Edit Mode ─────────────────────────────────────────── */
+#edit-mode-banner {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    font-size: 12px;
+    color: #92400e;
+    flex-shrink: 0;
+}
+
+/* Subtle warm tint when the script view is in edit mode */
+#script-view.editing {
+    background: #fffef8;
+}
+
+/* Each editable line: visible cursor, remove focus ring */
+#script-view.editing .line-content[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+    min-width: 4px;    /* keep caret visible in empty lines */
+}
+
+/* Highlight the line currently being edited */
+#script-view.editing .script-line:focus-within {
+    background: #fffff0;
+}
+
+/* Suppress the generic hover tint while editing */
+#script-view.editing .script-line:hover:not(:focus-within) {
+    background: transparent;
+}
+
+#btn-content-lock.locked {
+    color: var(--danger);
+    border-color: var(--danger);
+}
